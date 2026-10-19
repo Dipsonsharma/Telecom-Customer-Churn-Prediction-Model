@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Churn Prediction</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 28px 16px;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            color: #202938;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 28px;
+            background: #fff;
+            border-radius: 14px;
+            box-shadow: 0 5px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin: 0 0 24px;
+            text-align: center;
+            font-size: 27px;
+        }
+
+        h2 {
+            margin: 26px 0 16px;
+            font-size: 19px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px 20px;
+        }
+
+        .field { min-width: 0; }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        input, select {
+            width: 100%;
+            min-height: 42px;
+            padding: 10px 11px;
+            border: 1px solid #cbd2dc;
+            border-radius: 7px;
+            background: #fff;
+            color: #202938;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            outline: 2px solid #b9d5ff;
+            border-color: #3478d4;
+        }
+
+        .hint {
+            margin-top: 5px;
+            color: #707987;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 26px;
+            padding: 13px 16px;
+            border: 0;
+            border-radius: 8px;
+            background: #245fc7;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        button:hover { background: #194fae; }
+
+        .result, .error {
+            margin-top: 22px;
+            padding: 16px;
+            border-radius: 8px;
+            line-height: 1.5;
+            scroll-margin-top: 20px;
+        }
+
+        .result {
+            background: #eaf7ee;
+            border: 1px solid #b8e1c3;
+        }
+
+        .error {
+            background: #fff0f0;
+            border: 1px solid #efb8b8;
+            color: #9c2020;
+        }
+
+        .result h2 { margin: 0 0 8px; }
+
+        @media (max-width: 640px) {
+            .container { padding: 20px 16px; }
+            .grid { grid-template-columns: 1fr; }
+            h1 { font-size: 23px; }
+        }
+    </style>
+</head>
+
+<body>
+<main class="container">
+    <h1>Customer Churn Prediction</h1>
+
+    <form method="POST">
+        <h2>Customer Information</h2>
+
+        <div class="grid">
+            <div class="field">
+                <label for="gender">Gender</label>
+                <select id="gender" name="gender" required>
+                    <option value="">Select gender</option>
+                    {% for option in categorical_options['gender'] %}
+                    <option value="{{ option }}" {% if request.form.get('gender', '') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="SeniorCitizen">Senior Citizen</label>
+                <select id="SeniorCitizen" name="SeniorCitizen" required>
+                    <option value="">Select an option</option>
+                    {% for option in senior_citizen_options %}
+                    <option value="{{ option }}" {% if request.form.get('SeniorCitizen', '') == option|string %}selected{% endif %}>
+                        {% if option == 1 %}Yes{% else %}No{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+                <div class="hint">Choose Yes if the customer is a senior citizen; otherwise choose No.</div>
+            </div>
+
+            <div class="field">
+                <label for="tenure">Tenure (months)</label>
+                <input id="tenure" name="tenure" type="number" min="0" max="100" step="any"
+                       placeholder="e.g. 12" required value="{{ request.form.get('tenure', '') }}">
+                <div class="hint">How many months the customer has been with the company (e.g. 12).</div>
+            </div>
+
+            <div class="field">
+                <label for="PhoneService">Phone Service</label>
+                <select id="PhoneService" name="PhoneService" required>
+                    <option value="">Select an option</option>
+                    {% for option in categorical_options['PhoneService'] %}
+                    <option value="{{ option }}" {% if request.form.get('PhoneService', '') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="MultipleLines">Multiple Lines</label>
+                <select id="MultipleLines" name="MultipleLines" required>
+                    <option value="">Select an option</option>
+                    {% for option in categorical_options['MultipleLines'] %}
+                    <option value="{{ option }}" {% if request.form.get('MultipleLines', '') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="InternetService">Internet Service</label>
+                <select id="InternetService" name="InternetService" required>
+                    <option value="">Select an option</option>
+                    {% for option in categorical_options['InternetService'] %}
+                    <option value="{{ option }}" {% if request.form.get('InternetService', '') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="TechSupport">Tech Support</label>
+                <select id="TechSupport" name="TechSupport" required>
+                    <option value="">Select an option</option>
+                    {% for option in categorical_options['TechSupport'] %}
+                    <option value="{{ option }}" {% if request.form.get('TechSupport', '') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="StreamingTV">Streaming TV</label>
+                <select id="StreamingTV" name="StreamingTV" required>
+                    <option value="">Select an option</option>
+                    {% for option in categorical_options['StreamingTV'] %}
+                    <option value="{{ option }}" {% if request.form.get('StreamingTV', '') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="Contract">Contract</label>
+                <select id="Contract" name="Contract" required>
+                    <option value="">Select a contract type</option>
+                    {% for option in categorical_options['Contract'] %}
+                    <option value="{{ option }}" {% if request.form.get('Contract', '') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="PaperlessBilling">Paperless Billing</label>
+                <select id="PaperlessBilling" name="PaperlessBilling" required>
+                    <option value="">Select an option</option>
+                    {% for option in categorical_options['PaperlessBilling'] %}
+                    <option value="{{ option }}" {% if request.form.get('PaperlessBilling', '') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="PaymentMethod">Payment Method</label>
+                <select id="PaymentMethod" name="PaymentMethod" required>
+                    <option value="">Select a payment method</option>
+                    {% for option in categorical_options['PaymentMethod'] %}
+                    <option value="{{ option }}" {% if request.form.get('PaymentMethod', '') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="MonthlyCharges">Monthly Charges</label>
+                <input id="MonthlyCharges" name="MonthlyCharges" type="number" min="0" step="any"
+                       placeholder="e.g. 70.50" required value="{{ request.form.get('MonthlyCharges', '') }}">
+                <div class="hint">The customer's monthly bill amount (e.g. 70.50).</div>
+            </div>
+        </div>
+
+        <button type="submit">Predict Customer Churn</button>
+    </form>
+
+    {% if error %}
+    <div class="error" role="alert">{{ error }}</div>
+    {% endif %}
+
+    {% if prediction %}
+    <section id="prediction-result" class="result" aria-live="polite">
+        <h2>Prediction Result</h2>
+        <strong>{{ prediction }}</strong>
+        {% if probability is not none %}
+        <p>Model-estimated probability of churn: <strong>{{ probability }}%</strong></p>
+        {% endif %}
+    </section>
+    {% endif %}
+</main>
+
+<script>
+    window.addEventListener("load", function () {
+        const result = document.getElementById("prediction-result");
+        const error = document.querySelector(".error");
+
+        if (result) {
+            result.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else if (error) {
+            error.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    });
+</script>
+</body>
+</html>
